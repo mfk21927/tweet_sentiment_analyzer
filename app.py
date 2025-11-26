@@ -60,7 +60,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom Styling (using Markdown for simple CSS injection)
+# --- CSS Styling ---
 st.markdown("""
 <style>
     .stApp {
@@ -103,6 +103,8 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #4338ca;
     }
+    
+    /* Result Card Styling */
     .result-container {
         margin-top: 2rem;
         padding: 20px;
@@ -110,13 +112,25 @@ st.markdown("""
         background-color: white;
         box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
         border-left: 5px solid;
+        color: #333333; /* Forces text to be dark (visible) */
     }
+    .result-header {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    .result-sub {
+        font-size: 1.1rem;
+        color: #555;
+    }
+    
     .positive-border { border-left-color: #10b981; }
     .negative-border { border-left-color: #ef4444; }
 </style>
 """, unsafe_allow_html=True)
 
 # Load assets (Model and Tokenizer)
+# (Assuming load_assets() is defined elsewhere in your code)
 model, tokenizer = load_assets()
 
 # --- Title and Description ---
@@ -143,6 +157,7 @@ if st.button("Analyze Sentiment"):
             time.sleep(0.5) # Simulate a small delay for better user experience
             
             # Get prediction probabilities
+            # (Assuming predict_sentiment is defined elsewhere)
             prob_neg, prob_pos = predict_sentiment(user_input, model, tokenizer)
             
             # Determine the final sentiment result
@@ -157,14 +172,16 @@ if st.button("Analyze Sentiment"):
                 
             # --- Display Results ---
             
-            # Result Card
-            st.markdown(f'<div class="result-container {bar_class}">', unsafe_allow_html=True)
-            st.subheader(f"Predicted Sentiment: {sentiment_result}")
-            st.success(f"Confidence: {main_prob * 100:.2f}%")
-            st.markdown("</div>", unsafe_allow_html=True)
+            # 1. Result Card (Using HTML to keep text INSIDE the box)
+            st.markdown(f"""
+            <div class="result-container {bar_class}">
+                <div class="result-header">Predicted Sentiment: {sentiment_result}</div>
+                <div class="result-sub">Confidence: <strong>{main_prob * 100:.2f}%</strong></div>
+            </div>
+            """, unsafe_allow_html=True)
 
             
-            # --- Probability Plot ---
+            # --- Probability Plot (Bar Chart) ---
             st.markdown("---")
             st.subheader("Probability Distribution")
             
@@ -174,18 +191,15 @@ if st.button("Analyze Sentiment"):
                 'Probability': [prob_neg, prob_pos]
             })
             
-            # Use Streamlit's built-in bar chart
-            # FIX: We changed 'color=['#ef4444', '#10b981']' to color='Class'.
-            # This tells Streamlit/Altair to color the bars based on the categorical 'Class' column, 
-            # resolving the length mismatch error.
+            # Display Bar Chart
             st.bar_chart(
                 chart_data, 
                 x='Class', 
                 y='Probability',
-                color='Class' # Use the 'Class' column to color the two bars distinctly
+                color='Class'
             )
             
             # Optional detailed probabilities
             col1, col2 = st.columns(2)
-            col1.metric("Negative Probability", f"{prob_neg * 100:.2f}%", help="Probability of being class 0.")
-            col2.metric("Positive Probability", f"{prob_pos * 100:.2f}%", help="Probability of being class 1.")
+            col1.metric("Negative Probability", f"{prob_neg * 100:.2f}%")
+            col2.metric("Positive Probability", f"{prob_pos * 100:.2f}%")
